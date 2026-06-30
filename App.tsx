@@ -43,7 +43,7 @@ const App: React.FC = () => {
   };
 
   const samplingOptions = [1, 2, 4, 8, 16, 32, 64];
-  const quantizationOptions = [256, 16, 8, 4, 2];
+  const quantizationOptions = [2, 4, 8, 16, 256];
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">
@@ -145,19 +145,13 @@ const App: React.FC = () => {
                   min="0"
                   max={quantizationOptions.length - 1}
                   step="1"
-                  value={quantizationOptions.indexOf(quantizationLevels)} // Reverse index for slider logic if needed, but here: 256 is index 0
+                  value={quantizationOptions.indexOf(quantizationLevels)}
                   onChange={(e) => setQuantizationLevels(quantizationOptions[parseInt(e.target.value)])}
                   className="w-full accent-green-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                  style={{ direction: 'rtl' }} // Reverse direction so right is higher quality? No, let's keep left=high quality consistent or label properly. 
-                  // Let's standard: Left (min val) -> Right (max val).
-                  // Array is [256, 16, 8, 4, 2]. Index 0 is 256. 
-                  // If we want Right to be "Better Quality", we should reverse array or logic.
-                  // Let's make Right = High Quality (256).
                 />
-                 {/* Correcting slider logic for intuitive UX: Right = High Quality */}
                  <div className="flex justify-between mt-1 text-xs text-slate-400">
-                  <span>高画質 (256)</span>
-                  <span>低画質 (2)</span>
+                  <span>低画質 (2階調)</span>
+                  <span>高画質 (256階調)</span>
                 </div>
               </div>
             </section>
