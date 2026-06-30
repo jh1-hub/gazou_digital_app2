@@ -4,11 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>画像のデジタル化体験 | Digital Image Lab</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
       body {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      }
+      .font-mono {
+        font-family: 'JetBrains Mono', monospace;
       }
       /* Custom scrollbar for data view */
       .custom-scrollbar::-webkit-scrollbar {
@@ -24,23 +30,367 @@
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
       }
+      #image-canvas {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.1",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
-    "htm": "https://unpkg.com/htm@3.1.1/dist/htm.module.js"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-slate-50 text-slate-900 h-screen overflow-hidden">
-    <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+  </head>
+  <body class="bg-slate-50 text-slate-900 h-screen overflow-hidden flex flex-col">
+    
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-600 p-2 rounded-lg text-white">
+          <i data-lucide="monitor-play" class="w-6 h-6"></i>
+        </div>
+        <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+          画像のデジタル化体験
+          <span class="text-sm font-normal text-slate-500 hidden sm:inline">| 情報Ⅰ 学習サポート教材</span>
+        </h1>
+      </div>
+      <div class="flex gap-2">
+        <button 
+          id="toggle-view-btn"
+          class="px-4 py-2 rounded-lg font-medium text-sm transition-all border shadow-sm flex items-center gap-2 bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+        >
+          <i data-lucide="binary" class="w-4 h-4"></i>
+          <span>符号化表示: OFF</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+      
+      <!-- Left Panel: Controls -->
+      <aside class="w-full lg:w-80 bg-white border-r border-slate-200 p-6 flex flex-col gap-6 overflow-y-auto shrink-0">
+        
+        <!-- Image Selection -->
+        <section>
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <i data-lucide="image" class="w-4 h-4 text-slate-400"></i> 画像選択
+          </h2>
+          
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <button
+              data-img-key="LANDSCAPE"
+              class="sample-img-btn h-16 rounded-md overflow-hidden border-2 transition-all border-blue-600 ring-2 ring-blue-100"
+            >
+              <img src="https://picsum.photos/id/1018/512/512" alt="LANDSCAPE" class="w-full h-full object-cover" />
+            </button>
+            <button
+              data-img-key="CITY"
+              class="sample-img-btn h-16 rounded-md overflow-hidden border-2 transition-all border-transparent hover:border-slate-300"
+            >
+              <img src="https://picsum.photos/id/1033/512/512" alt="CITY" class="w-full h-full object-cover" />
+            </button>
+            <button
+              data-img-key="PORTRAIT"
+              class="sample-img-btn h-16 rounded-md overflow-hidden border-2 transition-all border-transparent hover:border-slate-300"
+            >
+              <img src="https://picsum.photos/id/1027/512/512" alt="PORTRAIT" class="w-full h-full object-cover" />
+            </button>
+            <button
+              data-img-key="ANIMAL"
+              class="sample-img-btn h-16 rounded-md overflow-hidden border-2 transition-all border-transparent hover:border-slate-300"
+            >
+              <img src="https://picsum.photos/id/1074/512/512" alt="ANIMAL" class="w-full h-full object-cover" />
+            </button>
+          </div>
+
+          <input 
+            type="file" 
+            id="file-upload-input" 
+            class="hidden" 
+            accept="image/png, image/jpeg, image/webp" 
+          />
+          <button 
+            id="file-upload-btn"
+            class="w-full py-2 px-4 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium text-sm transition-all flex items-center justify-center gap-2 border border-slate-200"
+          >
+            <i data-lucide="upload" class="w-4 h-4"></i>
+            <span>自分の画像をアップロード</span>
+          </button>
+        </section>
+
+        <!-- Sliders -->
+        <section class="space-y-5">
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-slate-400"></i> パラメータ調整
+          </h2>
+
+          <!-- Sampling Slider -->
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div class="flex justify-between mb-2">
+              <label class="text-xs font-bold text-slate-700">標本化レベル (画素の間隔)</label>
+              <span id="sampling-val" class="text-xs font-mono font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                1 px (高解像度)
+              </span>
+            </div>
+            <input
+              type="range"
+              id="sampling-slider"
+              min="0"
+              max="6"
+              step="1"
+              value="0"
+              class="w-full accent-blue-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <div class="flex justify-between mt-1 text-[10px] text-slate-400 font-semibold">
+              <span>細かい (1px)</span>
+              <span>粗い (64px)</span>
+            </div>
+          </div>
+
+          <!-- Quantization Slider -->
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div class="flex justify-between mb-2">
+              <label class="text-xs font-bold text-slate-700">量子化レベル (色の段階)</label>
+              <span id="quantization-val" class="text-xs font-mono font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                256 階調 (24bit Full Color)
+              </span>
+            </div>
+            <input
+              type="range"
+              id="quantization-slider"
+              min="0"
+              max="4"
+              step="1"
+              value="4"
+              class="w-full accent-green-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <div class="flex justify-between mt-1 text-[10px] text-slate-400 font-semibold">
+              <span>低画質 (2階調)</span>
+              <span>高画質 (256階調)</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- File Size Simulation -->
+        <section class="border-t border-slate-100 pt-5 space-y-4">
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="database" class="w-4 h-4 text-indigo-500"></i> データ量シミュレーション
+          </h2>
+
+          <div class="bg-gradient-to-br from-indigo-50/60 to-blue-50/60 border border-blue-100 rounded-xl p-4 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-bold text-slate-500 block mb-0.5">推定ファイルサイズ</span>
+                <span id="estimated-size" class="text-2xl font-mono font-black text-slate-800">
+                  Calculating...
+                </span>
+              </div>
+              <span id="size-reduction-tag" class="bg-emerald-100 text-emerald-800 text-[11px] px-2 py-0.5 rounded font-bold flex items-center gap-1 mt-1 hidden">
+                <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
+                <span id="reduction-percent">-0%</span>
+              </span>
+            </div>
+
+            <!-- Visual Bar Comparison -->
+            <div class="space-y-1 pt-1">
+              <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                <span id="original-size-label">元: 0 B</span>
+                <span id="current-size-label">今回: 0 B</span>
+              </div>
+              <div class="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+                <div 
+                  id="size-ratio-bar"
+                  class="bg-blue-600 h-full rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                  style="width: 100%"
+                ></div>
+              </div>
+            </div>
+
+            <div class="text-[9px] text-slate-400 leading-tight">
+              ※ 圧縮なしのRAW（生）画像データとしての推定値です
+            </div>
+          </div>
+
+          <!-- Calculation breakdown -->
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/60 space-y-2">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+              <i data-lucide="calculator" class="w-3.5 h-3.5 text-blue-500"></i>
+              <span>計算の内訳（情報Ⅰ公式）</span>
+            </div>
+            
+            <div class="text-[11px] space-y-1.5 font-mono text-slate-600 divide-y divide-slate-100">
+              <div class="flex justify-between py-1">
+                <span>① 画素数 (横×縦)</span>
+                <span id="calc-pixels" class="font-bold text-slate-800 text-right">0 px</span>
+              </div>
+              <div class="flex justify-between py-1">
+                <span>② 色情報 (RGB)</span>
+                <span id="calc-color-depth" class="font-bold text-slate-800 text-right">24 bit</span>
+              </div>
+              <div class="flex justify-between py-1">
+                <span>③ 総ビット数 (①×②)</span>
+                <span id="calc-total-bits" class="font-bold text-slate-800 text-right">0 bit</span>
+              </div>
+              <div class="flex justify-between pt-1 text-blue-700 font-bold">
+                <span>④ バイト換算 (③÷8)</span>
+                <span id="calc-bytes" class="text-right">0 B</span>
+              </div>
+            </div>
+            
+            <div class="text-[9px] text-slate-400 leading-snug pt-1 border-t border-slate-100">
+              標本化で画素数（①）が減り、量子化で1画素あたりのビット数（②）が減ることで、全体のデータ量が劇的に削減されます。
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Center Canvas Area -->
+      <section class="flex-1 bg-slate-100 p-6 flex flex-col relative overflow-hidden min-w-0">
+        <div class="flex-1 flex flex-col relative min-h-0 bg-slate-200/50 rounded-2xl border-2 border-dashed border-slate-300 overflow-hidden items-center justify-center p-4">
+          
+          <!-- Canvas Wrapper (maintains aspect ratio and fits container) -->
+          <div id="canvas-container" class="relative w-full h-full flex items-center justify-center">
+            <canvas id="image-canvas" class="shadow-lg rounded bg-white transition-shadow duration-300 hover:shadow-2xl cursor-crosshair"></canvas>
+            
+            <!-- Hover details overlay (follows mouse or stays in corner) -->
+            <div id="pixel-tooltip" class="absolute hidden bg-slate-900/90 text-white p-3 rounded-lg text-xs font-mono border border-slate-700/50 pointer-events-none shadow-xl z-20 space-y-1.5 backdrop-blur-sm min-w-[160px]">
+              <div class="flex items-center gap-1.5 border-b border-slate-700 pb-1">
+                <span id="tooltip-color-preview" class="w-3.5 h-3.5 rounded border border-white/20"></span>
+                <span class="font-bold text-slate-300">座標: (x:<span id="tooltip-x">0</span>, y:<span id="tooltip-y">0</span>)</span>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-red-400 font-bold">R (赤):</span>
+                <span><span id="tooltip-r">0</span> <span class="text-slate-400 text-[10px]">|<span id="tooltip-bin-r">00000000</span>|</span></span>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-green-400 font-bold">G (緑):</span>
+                <span><span id="tooltip-g">0</span> <span class="text-slate-400 text-[10px]">|<span id="tooltip-bin-g">00000000</span>|</span></span>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-blue-400 font-bold">B (青):</span>
+                <span><span id="tooltip-b">0</span> <span class="text-slate-400 text-[10px]">|<span id="tooltip-bin-b">00000000</span>|</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overlay Labels -->
+          <div class="absolute bottom-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
+            <div class="bg-black/70 backdrop-blur-sm text-white text-[11px] px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+              <span>標本化: <strong id="overlay-sampling">1</strong>px ブロック</span>
+            </div>
+            <div class="bg-black/70 backdrop-blur-sm text-white text-[11px] px-3 py-1 rounded-full border border-white/10 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+              <span>量子化: <strong id="overlay-quantization">256</strong>階調 (<strong id="overlay-bits">8</strong>bit/色)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Data / Explanation Panels -->
+      <aside class="w-full lg:w-96 bg-slate-50 border-l border-slate-200 p-6 flex flex-col gap-5 overflow-y-auto shrink-0">
+        
+        <!-- Tab Container: Explanation -->
+        <div id="explanation-panel" class="flex-1 flex flex-col space-y-4">
+          <div class="flex items-center gap-2 border-b border-slate-200 pb-3">
+            <i data-lucide="book-open" class="w-5 h-5 text-blue-600"></i>
+            <h3 class="text-base font-bold text-slate-800">「デジタル化」のしくみ</h3>
+          </div>
+
+          <div class="space-y-4 text-sm text-slate-600 leading-relaxed">
+            <div class="bg-blue-50/70 border border-blue-100 p-3.5 rounded-xl text-xs text-blue-800 leading-normal">
+              アナログな画像（光や風景）をコンピュータで扱えるデジタルデータに変換するには、<strong>「標本化」「量子化」「符号化」</strong>という3つのステップを行います。
+            </div>
+
+            <div class="space-y-3">
+              <div class="relative pl-5 border-l-2 border-blue-500">
+                <span class="absolute left-[-6px] top-0.5 w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
+                <h4 class="font-bold text-slate-800 text-xs mb-1">1. 標本化 (サンプリング)</h4>
+                <p class="text-xs text-slate-500">画像を格子状に細かく区切り、1つ1つの「画素（ピクセル）」に分割します。間隔（px）を小さくするほど、滑らかで精細な画像（高解像度）になります。</p>
+              </div>
+
+              <div class="relative pl-5 border-l-2 border-green-500">
+                <span class="absolute left-[-6px] top-0.5 w-2.5 h-2.5 bg-green-500 rounded-full"></span>
+                <h4 class="font-bold text-slate-800 text-xs mb-1">2. 量子化 (クォンタイズ)</h4>
+                <p class="text-xs text-slate-500">分割した各画素の明るさや色（光の強さ）を、段階的な数値で表します。段階（階調）が多いほど自然な色合いになり、少ないとモザイク画のようになります。</p>
+              </div>
+
+              <div class="relative pl-5 border-l-2 border-indigo-500">
+                <span class="absolute left-[-6px] top-0.5 w-2.5 h-2.5 bg-indigo-500 rounded-full"></span>
+                <h4 class="font-bold text-slate-800 text-xs mb-1">3. 符号化 (コーディング)</h4>
+                <p class="text-xs text-slate-500">数値化した色情報をコンピュータが理解できる「0」と「1」の2進数のデジタルコードに変換して並べます。これにより初めてコンピュータに保存できるようになります。</p>
+              </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-100 p-3 rounded-lg text-xs text-amber-800 flex gap-2">
+              <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
+              <p>パラメータを動かして、画像の見た目がどう変わるか、ファイルサイズがどのように増減するか観察してみましょう！</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Container: Data Encoding -->
+        <div id="data-viewer-panel" class="flex-1 flex flex-col space-y-4 hidden">
+          <div class="flex items-center gap-2 border-b border-slate-200 pb-3">
+            <i data-lucide="binary" class="w-5 h-5 text-indigo-600"></i>
+            <h3 class="text-base font-bold text-slate-800">デジタル符号化データ</h3>
+          </div>
+
+          <!-- Mini Hover Status -->
+          <div id="data-hover-status" class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl space-y-1.5">
+            <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider block">選択中 / ホバー中の画素情報</span>
+            <div id="data-hover-active" class="flex items-center gap-3">
+              <span id="data-hover-color-preview" class="w-8 h-8 rounded border border-slate-300 shadow-sm shrink-0"></span>
+              <div class="text-xs font-mono text-slate-700 flex-1 space-y-0.5">
+                <div class="flex justify-between">
+                  <span>座標:</span>
+                  <strong class="text-slate-900">(<span id="data-x">0</span>, <span id="data-y">0</span>)</strong>
+                </div>
+                <div class="flex justify-between">
+                  <span>RGB 10進数:</span>
+                  <strong class="text-slate-900">R<span id="data-r">0</span> G<span id="data-g">0</span> B<span id="data-b">0</span></strong>
+                </div>
+                <div class="flex justify-between text-indigo-600 font-bold">
+                  <span>符号化(2進数):</span>
+                  <span>R:<span id="data-bin-r">00000000</span> G:<span id="data-bin-g">00000000</span> B:<span id="data-bin-b">00000000</span></span>
+                </div>
+              </div>
+            </div>
+            <div id="data-hover-empty" class="text-xs text-slate-400 text-center py-2">
+              キャンバス上の画像にカーソルを乗せると、その画素のデジタルデータが表示されます。
+            </div>
+          </div>
+
+          <!-- Encoding list view -->
+          <div class="flex-1 flex flex-col min-h-0 space-y-2">
+            <span class="text-xs font-bold text-slate-500">画素データの2進数並び（代表部 4×4 グリッド）</span>
+            <div class="flex-1 border border-slate-200 rounded-xl bg-white overflow-hidden flex flex-col min-h-[180px]">
+              <!-- Table Header -->
+              <div class="grid grid-cols-4 text-[10px] font-bold text-slate-500 bg-slate-100 border-b border-slate-200 py-1.5 text-center font-mono shrink-0">
+                <span>位置 (X,Y)</span>
+                <span class="text-red-500">R (赤)</span>
+                <span class="text-green-600">G (緑)</span>
+                <span class="text-blue-500">B (青)</span>
+              </div>
+              <!-- Table Rows (Interactive & Scrollable) -->
+              <div id="encoding-table-rows" class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100 text-xs font-mono">
+                <!-- Dynamically filled -->
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-snug">
+              実際の画像ファイルでは、上表のような0と1の並びが画像の左上から右下まで規則正しくヘッダ情報の後ろに並んでいます。
+            </p>
+          </div>
+        </div>
+        
+        <!-- Toggle Helper if explanation is hidden -->
+        <div id="view-toggle-helper" class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-xs text-blue-800 hidden">
+          <p>現在「符号化データ」を表示中です。<br/>解説を見るには上部のボタンで切り替えてください。</p>
+        </div>
+      </aside>
+
+    </main>
+
+    <!-- Vanilla Javascript Logic -->
+    <script type="module" src="./index.js"></script>
+  </body>
 </html>
