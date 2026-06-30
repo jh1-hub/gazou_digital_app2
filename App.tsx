@@ -4,7 +4,16 @@ import { ExplanationPanel } from './components/ExplanationPanel';
 import { DataViewer } from './components/DataViewer';
 import { Button } from './components/Button';
 import { SampleImage, ImageStats, PixelData } from './types';
-import { Upload, Image as ImageIcon, Sliders, MonitorPlay } from 'lucide-react';
+import { Upload, Image as ImageIcon, Sliders, MonitorPlay, Database, TrendingDown, Calculator } from 'lucide-react';
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(2)} KB`;
+  const mb = kb / 1024;
+  return `${mb.toFixed(2)} MB`;
+};
 
 const App: React.FC = () => {
   // State
@@ -152,6 +161,106 @@ const App: React.FC = () => {
                 </div>
               </div>
             </section>
+
+            {/* File Size Simulation */}
+            {stats.width > 0 && (
+              <section className="border-t border-slate-100 pt-6 space-y-4">
+                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <Database className="w-4 h-4 text-indigo-500" /> データ量シミュレーション
+                </h2>
+
+                <div className="bg-gradient-to-br from-indigo-50/60 to-blue-50/60 border border-blue-100 rounded-xl p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500 block mb-0.5">推定ファイルサイズ</span>
+                      <span className="text-2xl font-mono font-black text-slate-800">
+                        {formatBytes(stats.estimatedSizeInBytes)}
+                      </span>
+                    </div>
+                    {(() => {
+                      const originalSize = (stats.width * stats.height * (samplingRate ** 2)) * 3;
+                      const reductionPercent = originalSize > 0 ? Math.max(0, ((1 - (stats.estimatedSizeInBytes / originalSize)) * 100)) : 0;
+                      if (reductionPercent > 0.1) {
+                        return (
+                          <span className="bg-emerald-100 text-emerald-800 text-[11px] px-2 py-0.5 rounded font-bold flex items-center gap-1 mt-1">
+                            <TrendingDown className="w-3.5 h-3.5 animate-bounce" />
+                            -{reductionPercent.toFixed(1)}%
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="bg-slate-100 text-slate-600 text-[11px] px-2 py-0.5 rounded font-bold mt-1">
+                          元サイズ
+                        </span>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Visual Bar Comparison */}
+                  {(() => {
+                    const originalSize = (stats.width * stats.height * (samplingRate ** 2)) * 3;
+                    const percentOfOriginal = originalSize > 0 ? (stats.estimatedSizeInBytes / originalSize) * 100 : 100;
+                    return (
+                      <div className="space-y-1 pt-1">
+                        <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                          <span>元: {formatBytes(originalSize)}</span>
+                          <span>今回: {formatBytes(stats.estimatedSizeInBytes)}</span>
+                        </div>
+                        <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden flex">
+                          <div 
+                            className="bg-blue-600 h-full rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                            style={{ width: `${Math.max(3, percentOfOriginal)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="text-[10px] text-slate-400 leading-tight">
+                    ※ 圧縮なしのRAW（生）画像データとしての推定値です
+                  </div>
+                </div>
+
+                {/* Calculation breakdown */}
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/60 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                    <Calculator className="w-3.5 h-3.5 text-blue-500" />
+                    <span>計算の内訳（情報Ⅰ公式）</span>
+                  </div>
+                  
+                  <div className="text-[11px] space-y-1.5 font-mono text-slate-600 divide-y divide-slate-100">
+                    <div className="flex justify-between py-1">
+                      <span>① 画素数 (横×縦)</span>
+                      <span className="font-semibold text-slate-800 text-right">
+                        {stats.width} × {stats.height} ＝ {(stats.width * stats.height).toLocaleString()} px
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span>② 色情報 (RGB)</span>
+                      <span className="font-semibold text-slate-800 text-right">
+                        {stats.bitsPerChannel} bit × 3色 ＝ {stats.bitsPerChannel * 3} bit
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span>③ 総ビット数 (①×②)</span>
+                      <span className="font-semibold text-slate-800 text-right">
+                        {(stats.width * stats.height * stats.bitsPerChannel * 3).toLocaleString()} bit
+                      </span>
+                    </div>
+                    <div className="flex justify-between pt-1 text-blue-700 font-bold">
+                      <span>④ バイト換算 (③÷8)</span>
+                      <span className="text-right">
+                        {stats.estimatedSizeInBytes.toLocaleString()} B
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="text-[10px] text-slate-400 leading-snug pt-1 border-t border-slate-100">
+                    標本化で画素数（①）が減り、量子化で1画素あたりのビット数（②）が減ることで、全体のデータ量が劇的に削減されます。
+                  </div>
+                </div>
+              </section>
+            )}
           </aside>
 
           {/* Center: Canvas Area */}
